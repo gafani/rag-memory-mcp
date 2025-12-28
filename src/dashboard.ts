@@ -5,7 +5,6 @@ import open from 'open';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
-import { pathToFileURL } from 'url';
 
 dotenv.config();
 
@@ -58,18 +57,16 @@ app.get('/', (c) => {
   return c.html(htmlContent);
 });
 
-export async function startDashboard(port: number = 3000) {
+async function startDashboard() {
+  const port = 4567;
   console.error('Server is running on http://localhost:' + port);
 
   serve({
     fetch: app.fetch,
     port
   }, (info) => {
-    open('http://localhost:' + info.port);
+    open('http://localhost:' + port);
   });
 }
 
-// 파일이 직접 실행될 때만 대시보드 시작
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
-  startDashboard();
-}
+startDashboard();

@@ -10,7 +10,9 @@ import { v4 as uuidv4 } from "uuid";
 
 import { getEmbedding, rerank } from "./lib/ai.js";
 import { getTable, saveMemory, searchMemory } from "./lib/db.js";
-import { startDashboard } from "./dashboard.js";
+import { spawn } from "child_process";
+import path from "path";
+import { fileURLToPath } from "url";
 
 export { saveMemory, searchMemory, getEmbedding, rerank };
 
@@ -193,14 +195,30 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 // Startup
 async function main() {
   try {
+    // Define __dirname for ES modules
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
     // Check for --disable-gui flag
     const disableGui = process.argv.includes('--disable-gui');
 
     if (disableGui) {
       console.error('Dashboard disabled by flag');
     } else {
-      // Start dashboard in background (don't await)
-      startDashboard().catch(console.error);
+      // Determine extension based on the executed file
+      const executedFile = process.argv[1];
+      const ext = executedFile.endsWith('.ts') ? '.ts' : '.js';
+
+      // Find dashboard path in the same directory
+      const dashboardPath = path.join(__dirname, `dashboard${ext}`);
+
+      // Spawn dashboard process
+      const child = spawn(process.execPath, [dashboardPath], {
+        detached: true,
+        stdio: 'ignore', // Core: disconnect from parent's stdio
+        env: process.env // Inherit environment variables (API KEY, etc.)
+      });
+
+      child.unref(); // Allow child to continue running independently if parent exits
     }
 
     // Initialize database (getTable initializes the DB on first call)
