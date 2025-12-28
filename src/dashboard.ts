@@ -59,7 +59,7 @@ app.get('/', (c) => {
 });
 
 export async function startDashboard(port: number = 3000) {
-  console.log('Server is running on http://localhost:' + port);
+  console.error('Server is running on http://localhost:' + port);
 
   serve({
     fetch: app.fetch,

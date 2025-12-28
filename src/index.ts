@@ -197,7 +197,7 @@ async function main() {
     const disableGui = process.argv.includes('--disable-gui');
 
     if (disableGui) {
-      console.log('Dashboard disabled by flag');
+      console.error('Dashboard disabled by flag');
     } else {
       // Start dashboard in background (don't await)
       startDashboard().catch(console.error);
