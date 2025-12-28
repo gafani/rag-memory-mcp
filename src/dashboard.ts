@@ -3,14 +3,8 @@ import { Hono } from 'hono';
 import { getTable } from './lib/db.js';
 import open from 'open';
 import dotenv from 'dotenv';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
 dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = new Hono();
 
@@ -54,12 +48,111 @@ app.get('/api/memories', async (c) => {
   }
 });
 
-// UI: 대시보드 HTML
-app.get('/', (c) => {
-  const htmlPath = path.join(__dirname, 'dashboard.html');
-  const htmlContent = fs.readFileSync(htmlPath, 'utf-8');
-  return c.html(htmlContent);
-});
+// UI: 대시보드 HTML (내장)
+const htmlContent = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Memory Viewer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 h-screen flex flex-col overflow-hidden">
+    <!-- Header -->
+    <header class="bg-white shadow-sm p-4 z-10">
+        <div class="max-w-7xl mx-auto flex justify-between items-center gap-4">
+            <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2 whitespace-nowrap">
+                🧠 RAG Memory Viewer
+            </h1>
+
+            <!-- 검색 기능 -->
+            <div class="flex-1 max-w-xl">
+                 <input type="text"
+                        id="search-input"
+                        placeholder="Search content, agent, or path..."
+                        class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                        oninput="filterMemories(this.value)">
+            </div>
+
+            <div class="text-sm text-gray-500 whitespace-nowrap" id="total-count">Loading...</div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="flex-1 overflow-hidden bg-gray-50">
+        <main class="h-full w-full p-6 overflow-y-auto">
+            <div id="memory-list" class="space-y-4 max-w-5xl mx-auto">
+                <div class="text-center text-gray-400 mt-20">
+                    Loading memories...
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let allMemories = [];
+
+        // 데이터 로드
+        async function loadMemories() {
+            try {
+                const res = await fetch('/api/memories');
+                allMemories = await res.json();
+                document.getElementById('total-count').innerText = 'Total Memories: ' + allMemories.length;
+                // 로드 후 바로 전체 렌더링
+                renderMemories(allMemories);
+            } catch (e) {
+                console.error(e);
+                alert('데이터 로드 실패');
+            }
+        }
+
+        // 검색 필터링
+        function filterMemories(query) {
+            if (!query) {
+                renderMemories(allMemories);
+                return;
+            }
+
+            const lowerQuery = query.toLowerCase();
+            const filtered = allMemories.filter(m => {
+                const contentMatch = (m.content || '').toLowerCase().includes(lowerQuery);
+                const agentMatch = (m.agent || '').toLowerCase().includes(lowerQuery);
+                const pathMatch = (m.path || '').toLowerCase().includes(lowerQuery);
+                return contentMatch || agentMatch || pathMatch;
+            });
+
+            renderMemories(filtered);
+        }
+
+        // 메모리 리스트 렌더링
+        function renderMemories(list) {
+            const container = document.getElementById('memory-list');
+            if (list.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 py-10">검색 결과가 없습니다.</div>';
+                return;
+            }
+
+            container.innerHTML = list.map(m => \`
+                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">\${m.agent}</span>
+                            <span class="text-xs text-gray-500">\${m.formattedDate || ''}</span>
+                        </div>
+                        <button class="text-gray-400 hover:text-gray-600" title="\${m.id}">🆔</button>
+                    </div>
+                    <div class="prose prose-sm max-w-none text-gray-800 whitespace-pre-wrap">\${m.content}</div>
+                    <div class="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-400 font-mono truncate">📍 \${m.path}</div>
+                </div>
+            \`).join('');
+        }
+
+        loadMemories();
+    </script>
+</body>
+</html>`;
+
+app.get('/', (c) => c.html(htmlContent));
 
 async function startDashboard() {
   const port = 4567;

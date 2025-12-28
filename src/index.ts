@@ -212,13 +212,15 @@ async function main() {
       const dashboardPath = path.join(__dirname, `dashboard${ext}`);
 
       // Spawn dashboard process
+      console.error('Attempting to spawn dashboard at:', dashboardPath);
       const child = spawn(process.execPath, [dashboardPath], {
         detached: true,
-        stdio: 'ignore', // Core: disconnect from parent's stdio
+        stdio: ['ignore', 'ignore', 'inherit'], // Core: disconnect from parent's stdio
         env: process.env // Inherit environment variables (API KEY, etc.)
       });
 
       child.unref(); // Allow child to continue running independently if parent exits
+      child.on('error', (err) => console.error('Failed to spawn dashboard:', err));
     }
 
     // Initialize database (getTable initializes the DB on first call)
