@@ -16,6 +16,20 @@ npm install -g git+https://forgejo.home/gafani/rag-for-agent-mcp.git
 
 > 참고: 위 명령어는 Git 저장소에서 직접 설치합니다. 필요 시 Node.js/npm 버전을 확인해주세요.
 
+## Web Dashboard
+
+- 기본적으로 MCP 서버 실행 시 대시보드가 자동으로 열립니다. 대시보드 접속 주소는 http://localhost:3000 입니다.
+- 대시보드를 끄고 싶을 때는 --disable-gui 옵션을 사용합니다.
+
+### 수동 실행
+
+- 서버를 띄우지 않고 대시보드만 보려면 아래 명령어를 사용합니다.
+```powershell
+npm run view
+# 또는
+npx tsx src/dashboard.ts
+```
+
 ## MCP 설정 (Configuration)
 
 Claude Desktop 등에서 사용할 때의 설정 예시를 정확히 보여드립니다:
@@ -35,7 +49,11 @@ Claude Desktop 등에서 사용할 때의 설정 예시를 정확히 보여드�
 ```
 
 - **필수 환경변수:**
-- `GOOGLE_API_KEY`: Google Generative AI API 키 (AI embedding 및 reranking에 사용).
+ - `GOOGLE_API_KEY`: Google Generative AI API 키 (AI embedding 및 reranking에 사용).
+
+
+
+
 
 ## Tools
 

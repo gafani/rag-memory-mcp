@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from "uuid";
 
 import { getEmbedding, rerank } from "./lib/ai.js";
 import { getTable, saveMemory, searchMemory } from "./lib/db.js";
+import { startDashboard } from "./dashboard.js";
 
 export { saveMemory, searchMemory, getEmbedding, rerank };
 
@@ -192,6 +193,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 // Startup
 async function main() {
   try {
+    // Check for --disable-gui flag
+    const disableGui = process.argv.includes('--disable-gui');
+
+    if (disableGui) {
+      console.log('Dashboard disabled by flag');
+    } else {
+      // Start dashboard in background (don't await)
+      startDashboard().catch(console.error);
+    }
+
     // Initialize database (getTable initializes the DB on first call)
     await getTable();
 
