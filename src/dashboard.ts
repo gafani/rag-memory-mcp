@@ -3,9 +3,12 @@ import { Hono } from 'hono';
 import { getTable } from './lib/db.js';
 import open from 'open';
 import dotenv from 'dotenv';
+import path from 'path';
+import { createServer } from 'net';
 
 dotenv.config();
 
+const dirName = path.basename(process.cwd());
 const app = new Hono();
 
 // API: 메모리 목록 조회
@@ -62,7 +65,7 @@ const htmlContent = `<!DOCTYPE html>
     <header class="bg-white shadow-sm p-4 z-10">
         <div class="max-w-7xl mx-auto flex justify-between items-center gap-4">
             <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2 whitespace-nowrap">
-                🧠 RAG Memory Viewer
+                🧠 RAG Memory Viewer (${dirName})
             </h1>
 
             <!-- 검색 기능 -->
@@ -154,16 +157,59 @@ const htmlContent = `<!DOCTYPE html>
 
 app.get('/', (c) => c.html(htmlContent));
 
-async function startDashboard() {
-  const port = 4567;
-  console.error('Server is running on http://localhost:' + port);
+// 사용 가능한 포트 찾기
+function findAvailablePort(startPort: number): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const maxAttempts = 10;
 
-  serve({
-    fetch: app.fetch,
-    port
-  }, (info) => {
-    open('http://localhost:' + port).catch(console.error);
+    const tryPort = (port: number, attempt: number) => {
+      if (attempt >= maxAttempts) {
+        reject(new Error(`No available port found after ${maxAttempts} attempts`));
+        return;
+      }
+
+      const server = createServer();
+
+      server.once('error', (err: any) => {
+        if (err.code === 'EADDRINUSE') {
+          // 포트가 이미 사용 중이면 다음 포트 시도
+          server.close();
+          tryPort(port + 1, attempt + 1);
+        } else {
+          server.close();
+          reject(err);
+        }
+      });
+
+      server.once('listening', () => {
+        server.close(() => {
+          resolve(port);
+        });
+      });
+
+      server.listen(port);
+    };
+
+    tryPort(startPort, 0);
   });
+}
+
+async function startDashboard() {
+  try {
+    const foundPort = await findAvailablePort(4567);
+
+    serve({
+      fetch: app.fetch,
+      port: foundPort
+    }, (info) => {
+      const actualPort = info.port;
+      console.error(`Server is running on http://localhost:${actualPort} (${dirName})`);
+      open(`http://localhost:${actualPort}`).catch(console.error);
+    });
+  } catch (error) {
+    console.error('Failed to find available port:', error);
+    process.exit(1);
+  }
 }
 
 startDashboard();
