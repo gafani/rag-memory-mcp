@@ -1,0 +1,14 @@
+
+- 이 프로젝트는 Opencode Agent Orchestration을 위한 RAG MCP Sever입니다.
+- MCP를 지원하는 agent들은 stdio, stdout을 통해 이 MCP와 통신할 수 있습니다.
+- npx로 이 MCP Server를 즉시 설치해서 사용할 수 있습니다.
+- 이 mcp 서버가 활성화되면, 해당 디렉토리에 .rag-for-agent-mcp 폴더를 생성하고 이 안에 데이터들을 저장합니다.
+- 이 mcp는 agents들이 판단하에 기록하기 위한 내용을 저장하기 위한 메모리 입니다.
+- 선택할 수 있는 embedding model들로는:
+  - google/gemini-embedding-001 
+- 따라서 google api key를 사용하여 google provider api key 가 필요합니다.
+- agent가 이 mcp를 통해 기록할 때, directory path, agent 이름, 일시(datetime), 내용으로 입력을 합니다.
+- agent가 이 mcp를 통해 읽어올 때, directory path, agent 이름, 일시(datetime), 내용으로 검색을 합니다.
+- npx 이므로, nodejs v24.12.0 LTS로 합니다.
+- vector db는 윈도우, 리눅스, 맥 등에서 손쉽게 설치할 수 있는 패키지로 선정합니다.
+- 또 필요한게 있을까?
