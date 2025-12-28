@@ -5,8 +5,12 @@ import open from 'open';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = new Hono();
 
@@ -52,7 +56,7 @@ app.get('/api/memories', async (c) => {
 
 // UI: 대시보드 HTML
 app.get('/', (c) => {
-  const htmlPath = path.join(process.cwd(), 'src', 'dashboard.html');
+  const htmlPath = path.join(__dirname, 'dashboard.html');
   const htmlContent = fs.readFileSync(htmlPath, 'utf-8');
   return c.html(htmlContent);
 });
