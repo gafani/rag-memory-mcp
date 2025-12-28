@@ -1,34 +1,41 @@
 # rag-for-agent-mcp
 
+## 프로젝트 소개
+
+Agent를 위한 RAG(Vector+Reranking) 메모리 서버(기존 내용 유지).
+
 Agent용 RAG 메모리 서버입니다. LanceDB(Vector DB)와 Google Gemini(Embedding/Reranking)를 사용하여 효율적인 지식 저장 및 검색을 제공합니다.
 
-## 특징
+## 설치 방법 (Installation)
 
-- **Vector Search**: LanceDB를 사용한 고속 벡터 검색
-- **Reranking**: Google Gemini Flash로 검색 결과의 정확도 향상
-- **MCP 호환**: Model Context Protocol을 지원하여 Claude Desktop 등에서 바로 사용 가능
-- **영구 저장**: 데이터는 로컬에 영구 저장됩니다
+메인 설치 방법은 Git 저장소에서 직접 설치하는 방법을 권장합니다. npm 레지스트리를 거치지 않고 바로 설치합니다.
 
-## 설치 및 사용 (MCP 설정)
+```powershell
+npm install -g git+https://forgejo.home/gafani/rag-for-agent-mcp.git
+```
 
-Claude Desktop 등에서 사용할 때의 설정 예시입니다:
+> 참고: 위 명령어는 Git 저장소에서 직접 설치합니다. 필요 시 Node.js/npm 버전을 확인해주세요.
+
+## MCP 설정 (Configuration)
+
+Claude Desktop 등에서 사용할 때의 설정 예시를 정확히 보여드립니다:
 
 ```json
 {
   "mcpServers": {
     "rag-memory": {
       "command": "npx",
-      "args": ["-y", "rag-for-agent-mcp"],
+      "args": ["-y", "git+https://forgejo.home/gafani/rag-for-agent-mcp.git"],
       "env": {
-        "GOOGLE_API_KEY": "YOUR_GOOGLE_API_KEY"
+        "GOOGLE_API_KEY": "<YOUR_GOOGLE_API_KEY>"
       }
     }
   }
 }
 ```
 
-**필수 환경변수:**
-- `GOOGLE_API_KEY`: Google Generative AI API 키 (AI embedding 및 reranking에 사용)
+- **필수 환경변수:**
+- `GOOGLE_API_KEY`: Google Generative AI API 키 (AI embedding 및 reranking에 사용).
 
 ## Tools
 
@@ -75,6 +82,28 @@ Claude Desktop 등에서 사용할 때의 설정 예시입니다:
   - `gemini-1.5-flash`: Reranking
 - **MCP SDK**: Model Context Protocol 구현
 - **TypeScript**: 타입 안전한 개발
+
+## 개발 가이드 (Development)
+
+- 클론 후 `npm install`
+- 빌드: `npm run build`
+- 테스트: `.env` 설정 후 `npx tsx src/scripts/test-manual.ts` 실행
+
+### 개발 실행 예시 (Windows PowerShell):
+
+```powershell
+# 클론 및 설치
+git clone https://forgejo.home/gafani/rag-for-agent-mcp.git
+cd rag-for-agent-mcp
+npm install
+
+# 빌드
+npm run build
+
+# 테스트 설정 및 실행
+$env:GOOGLE_API_KEY="YOUR_GOOGLE_API_KEY"
+npx tsx src/scripts/test-manual.ts
+```
 
 ## 라이선스
 
