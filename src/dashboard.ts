@@ -162,7 +162,7 @@ async function startDashboard() {
     fetch: app.fetch,
     port
   }, (info) => {
-    open('http://localhost:' + port);
+    open('http://localhost:' + port).catch(console.error);
   });
 }
 
