@@ -5,6 +5,7 @@ import open from 'open';
 import dotenv from 'dotenv';
 import path from 'path';
 import { createServer } from 'net';
+import { marked } from 'marked';
 
 dotenv.config();
 
@@ -35,11 +36,15 @@ app.get('/api/memories', async (c) => {
           relativePath = '(root)';
         }
 
+        // 마크다운을 HTML로 변환
+        const contentHtml = r.content ? marked.parse(r.content) : '';
+
         return {
           ...r,
           path: relativePath,
           formattedDate: new Date(r.timestamp).toLocaleString(),
-          pathParts: relativePath ? relativePath.split(/[/\\]/).filter((p: string) => p && p !== ':') : []
+          pathParts: relativePath ? relativePath.split(/[/\\]/).filter((p: string) => p && p !== ':') : [],
+          contentHtml
         };
       })
       .sort((a: any, b: any) => b.timestamp - a.timestamp);
@@ -144,7 +149,7 @@ const htmlContent = `<!DOCTYPE html>
                         </div>
                         <button class="text-gray-400 hover:text-gray-600" title="\${m.id}">🆔</button>
                     </div>
-                    <div class="prose prose-sm max-w-none text-gray-800 whitespace-pre-wrap">\${m.content}</div>
+                    <div class="prose prose-sm max-w-none text-gray-800">\${m.contentHtml || m.content}</div>
                     <div class="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-400 font-mono truncate">📍 \${m.path}</div>
                 </div>
             \`).join('');
