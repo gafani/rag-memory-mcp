@@ -16,7 +16,15 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "A RAG (Vector + Reranking) memory server for Agents",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gafani/rag-memory-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gafani/rag-memory-mcp/issues"
+  },
+  "homepage": "https://github.com/gafani/rag-memory-mcp#readme",
   "files": [
     "dist"
   ],
