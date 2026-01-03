@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test';
 // Scenario:
 // 1) Open dashboard at http://localhost:4567/
 // 2) Initial items count should be 20
-// 3) Click '더보기' to load 20 more items (total 40)
+// 3) Click 'Load More' to load 20 more items (total 40)
 // 4) Click again to load another 20 items (total 60)
 
 test.describe('Dashboard Load More', () => {
@@ -16,7 +16,7 @@ test.describe('Dashboard Load More', () => {
     const cards = page.locator('#memory-list > div.bg-white');
     await expect(cards).toHaveCount(20);
 
-    // 3) Click '더보기' to load next 20 items (total 40)
+    // 3) Click 'Load More' to load next 20 items (total 40)
     const loadMoreBtn = page.locator('#load-more-btn');
     await loadMoreBtn.click();
     await expect(cards).toHaveCount(40);
