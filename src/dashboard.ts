@@ -186,8 +186,25 @@ const htmlContent = `<!DOCTYPE html>
 
         // 그래프 렌더링
         function renderGraph() {
+            const elem = document.getElementById('3d-graph');
+            if (!elem) return;
+
             if (allMemories.length === 0) {
-                console.warn('No memories to display in graph');
+                // 기존 그래프 인스턴스 제거
+                if (graphInstance) {
+                    graphInstance._destructor();
+                    graphInstance = null;
+                }
+                // 빈 상태 메시지 표시
+                elem.innerHTML = `
+                    <div class="flex items-center justify-center h-full">
+                        <div class="text-center">
+                            <div class="text-6xl mb-4">🌌</div>
+                            <p class="text-gray-300 text-lg font-medium">No memory data available to visualize yet.</p>
+                            <p class="text-gray-500 text-sm mt-2">Add memories to see the Agent Galaxy graph.</p>
+                        </div>
+                    </div>
+                `;
                 return;
             }
 
@@ -237,9 +254,8 @@ const htmlContent = `<!DOCTYPE html>
                 });
             });
 
-            // 그래프 초기화
-            const elem = document.getElementById('3d-graph');
-            if (!elem) return;
+            // 그래프 초기화 - 빈 상태 메시지 제거
+            elem.innerHTML = '';
 
             graphInstance = ForceGraph3D()(elem)
                 .graphData({ nodes, links })
