@@ -212,6 +212,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     };
   }
 
+  if (name === "dashboard") {
+    return {
+      content: [
+        {
+          type: "text",
+          text: "대시보드는 서버 시작 시 자동으로 백그라운드에서 실행됩니다. http://localhost:4567 (또는 할당된 포트)를 확인하세요.",
+        },
+      ],
+    };
+  }
+
   throw new Error(`알 수 없는 도구: ${name}`);
 });
 

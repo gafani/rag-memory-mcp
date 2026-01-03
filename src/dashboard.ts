@@ -52,7 +52,15 @@ app.get('/api/memories', async (c) => {
     return c.json(formatted);
   } catch (error) {
     console.error(error);
-    return c.json({ error: 'Failed to fetch memories' }, 500);
+    const err = error instanceof Error ? error : new Error(String(error));
+    return c.json(
+      {
+        error: 'Failed to fetch memories',
+        details: err.message,
+        stack: err.stack,
+      },
+      500
+    );
   }
 });
 
@@ -95,23 +103,6 @@ const htmlContent = `<!DOCTYPE html>
                     onclick="toggleGraph()">
                 🌌 Agent Galaxy
             </button>
-
-            <!-- 검색 기능 -->
-            <div class="flex-1 max-w-xl">
-                 <input type="text"
-                        id="search-input"
-                        placeholder="Search content, agent, or path..."
-                        class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
-                        oninput="filterMemories(this.value)">
-            </div>
-
-            <div class="text-sm text-gray-500 whitespace-nowrap" id="total-count">Loading...</div>
-        </div>
-    </header>
-        <div class="max-w-7xl mx-auto flex justify-between items-center gap-4">
-            <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2 whitespace-nowrap">
-                🧠 RAG Memory Viewer (${dirName})
-            </h1>
 
             <!-- 검색 기능 -->
             <div class="flex-1 max-w-xl">
