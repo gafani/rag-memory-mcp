@@ -174,7 +174,7 @@ const htmlContent = `<!DOCTYPE html>
 
         // Pagination state
         let currentOffset = 0;
-        const PAGE_SIZE = 5;
+        const PAGE_SIZE = 20;
         let isLoading = false;
         let hasMore = true;
         let totalCount = 0;
@@ -303,6 +303,8 @@ const htmlContent = `<!DOCTYPE html>
 
         // 초기 메모리 로드
         async function loadMemories(reset = true) {
+            console.log('[loadMemories] Called with reset:', reset, 'currentOffset:', currentOffset);
+
             if (reset) {
                 currentOffset = 0;
                 displayedMemories = [];
@@ -311,6 +313,7 @@ const htmlContent = `<!DOCTYPE html>
 
             // 로딩 중이거나 더 로드할 항목이 없으면 중단
             if (isLoading || !hasMore) {
+                console.log('[loadMemories] Skipping - isLoading:', isLoading, 'hasMore:', hasMore);
                 return;
             }
 
@@ -501,15 +504,19 @@ const htmlContent = `<!DOCTYPE html>
                 list.forEach(m => {
                     const tempDiv = document.createElement('div');
                     tempDiv.innerHTML = createMemoryCard(m);
-                    container.appendChild(tempDiv.firstElementChild);
+                    const cardElement = tempDiv.querySelector('div');
+                    if (cardElement) {
+                        container.appendChild(cardElement);
+                    } else {
+                        console.error('[renderMemories] Failed to create card element for:', m.id);
+                    }
                 });
             }
         }
 
         // 메모리 카드 HTML 생성
         function createMemoryCard(m) {
-            return \`
-                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+            return \`<div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                     <div class="flex justify-between items-start mb-3">
                         <div class="flex items-center gap-2">
                             <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">\${m.agent}</span>
@@ -519,8 +526,7 @@ const htmlContent = `<!DOCTYPE html>
                     </div>
                     <div class="prose prose-sm max-w-none text-gray-800">\${m.contentHtml || m.content}</div>
                     <div class="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-400 font-mono truncate">📍 \${m.path}</div>
-                </div>
-            \`;
+                </div>\`;
         }
 
         // 페이지 로드 시 초기 메모리 로드

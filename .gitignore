@@ -4,3 +4,7 @@ dist/
 .rag-for-agent-mcp/
 *.log
 .DS_Store
+
+# Test artifacts
+server_pid.txt
+test-results/
