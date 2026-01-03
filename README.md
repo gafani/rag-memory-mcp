@@ -47,7 +47,9 @@ Claude Desktop 등에서 사용할 때의 설정 예시를 정확히 보여드�
       "command": "npx",
       "args": ["-y", "git+https://forgejo.home/gafani/rag-for-agent-mcp.git"],
       "env": {
-        "GOOGLE_API_KEY": "<YOUR_GOOGLE_API_KEY>"
+        "GOOGLE_API_KEY": "<YOUR_GOOGLE_API_KEY>",
+        "RAG_VECTOR_LIMIT": "50",
+        "RAG_RERANK_LIMIT": "10"
       }
     }
   }
@@ -56,6 +58,10 @@ Claude Desktop 등에서 사용할 때의 설정 예시를 정확히 보여드�
 
 - **필수 환경변수:**
  - `GOOGLE_API_KEY`: Google Generative AI API 키 (AI embedding 및 reranking에 사용).
+
+- **선택 환경변수:**
+ - `RAG_VECTOR_LIMIT`: Vector 검색에서 가져올 후보 문서 개수 (기본값: 25).
+ - `RAG_RERANK_LIMIT`: Reranking 후 반환할 최종 문서 개수 (기본값: 5).
 
 
 
@@ -187,6 +193,8 @@ npm run build
 
 # 테스트 설정 및 실행
 export GOOGLE_API_KEY="YOUR_GOOGLE_API_KEY"
+export RAG_VECTOR_LIMIT="50"
+export RAG_RERANK_LIMIT="10"
 npx tsx src/scripts/test-manual.ts
 ```
 

@@ -141,8 +141,21 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     const { query, agent_name, path: inputPath } = schema.parse(args);
 
+    const ragVectorLimitEnv = process.env.RAG_VECTOR_LIMIT;
+    const ragVectorLimitNumber = ragVectorLimitEnv ? Number(ragVectorLimitEnv) : NaN;
+    const ragVectorLimit = Number.isFinite(ragVectorLimitNumber)
+      ? Math.max(1, Math.floor(ragVectorLimitNumber))
+      : 25;
+
+    const ragRerankLimitEnv = process.env.RAG_RERANK_LIMIT;
+    const ragRerankLimitNumber = ragRerankLimitEnv ? Number(ragRerankLimitEnv) : NaN;
+    const ragRerankLimit = Number.isFinite(ragRerankLimitNumber)
+      ? Math.max(1, Math.floor(ragRerankLimitNumber))
+      : 5;
+
     // Get embedding for query
     const queryVector = await getEmbedding(query);
+
 
     // First search
     const rawSearchResults = await searchMemory(
@@ -151,8 +164,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         agent: agent_name,
         path: inputPath,
       },
-      25
+      ragVectorLimit
     );
+
 
     // Add score to search results
     const searchResults = rawSearchResults.map((result: any) => ({
