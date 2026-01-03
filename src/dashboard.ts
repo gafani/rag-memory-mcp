@@ -12,15 +12,26 @@ dotenv.config();
 const dirName = path.basename(process.cwd());
 const app = new Hono();
 
-// API: 메모리 목록 조회
+// API: 메모리 목록 조회 (페이지네이션 지원)
+// 쿼리 파라미터: limit (기본값 5), offset (기본값 0)
 app.get('/api/memories', async (c) => {
   try {
     const table = await getTable();
-    const results = await table.query().limit(10000).toArray();
+
+    // 페이지네이션 파라미터 파싱
+    const limitParam = c.req.query('limit');
+    const offsetParam = c.req.query('offset');
+
+    const limit = limitParam ? Math.max(1, parseInt(limitParam, 10)) : 5;
+    const offset = offsetParam ? Math.max(0, parseInt(offsetParam, 10)) : 0;
+
+    // 전체 데이터를 가져와서 클라이언트 측 정렬 및 필터링 수행
+    // LanceDB 쿼리 정렬 제약으로 인해 전체를 가져온 후 정렬
+    const allResults = await table.query().limit(10000).toArray();
 
     // 날짜 포맷팅 및 정렬 (최신순)
     const cwd = process.cwd();
-    const formatted = results
+    const formatted = allResults
       .map((r: any) => {
         let relativePath = r.path;
 
@@ -49,7 +60,19 @@ app.get('/api/memories', async (c) => {
       })
       .sort((a: any, b: any) => b.timestamp - a.timestamp);
 
-    return c.json(formatted);
+    // 페이지네이션 적용
+    const total = formatted.length;
+    const items = formatted.slice(offset, offset + limit);
+    const hasMore = offset + limit < total;
+
+    // 페이지네이션 응답 반환
+    return c.json({
+      items,
+      total,
+      hasMore,
+      offset,
+      limit
+    });
   } catch (error) {
     console.error(error);
     const err = error instanceof Error ? error : new Error(String(error));
@@ -130,13 +153,31 @@ const htmlContent = `<!DOCTYPE html>
                     Loading memories...
                 </div>
             </div>
+
+            <!-- Load More Button -->
+            <div id="load-more-container" class="flex justify-center mt-8 mb-8 hidden">
+                <button id="load-more-btn"
+                        onclick="loadMemories(false)"
+                        class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    더보기
+                </button>
+            </div>
         </main>
     </div>
 
     <script>
-        let allMemories = [];
+        // State management
+        let allMemories = [];          // 모든 메모리 (검색 필터링용)
+        let displayedMemories = [];     // 현재 표시 중인 메모리
         let graphInstance = null;
         let graphVisible = false;
+
+        // Pagination state
+        let currentOffset = 0;
+        const PAGE_SIZE = 5;
+        let isLoading = false;
+        let hasMore = true;
+        let totalCount = 0;
 
         // 그래프 토글
         function toggleGraph() {
@@ -187,7 +228,7 @@ const htmlContent = `<!DOCTYPE html>
                     graphInstance = null;
                 }
                 // 빈 상태 메시지 표시
-                elem.innerHTML = 
+                elem.innerHTML =
                     '<div class="flex items-center justify-center h-full">' +
                     '    <div class="text-center">' +
                     '        <div class="text-6xl mb-4">🌌</div>' +
@@ -260,24 +301,132 @@ const htmlContent = `<!DOCTYPE html>
                 });
         }
 
-        // 데이터 로드
-        async function loadMemories() {
-            try {
-                const res = await fetch('/api/memories');
-                allMemories = await res.json();
-                document.getElementById('total-count').innerText = 'Total Memories: ' + allMemories.length;
-                // 로드 후 바로 전체 렌더링
-                renderMemories(allMemories);
-            } catch (e) {
-                console.error(e);
-                alert('데이터 로드 실패');
+        // 초기 메모리 로드
+        async function loadMemories(reset = true) {
+            if (reset) {
+                currentOffset = 0;
+                displayedMemories = [];
+                hasMore = true;
             }
+
+            // 로딩 중이거나 더 로드할 항목이 없으면 중단
+            if (isLoading || !hasMore) {
+                return;
+            }
+
+            isLoading = true;
+            updateLoadMoreButton();
+
+            try {
+                // 검색 쿼리가 있으면 검색 모드, 아니면 전체 로드
+                const searchInput = document.getElementById('search-input');
+                const query = searchInput ? searchInput.value.trim() : '';
+
+                const url = query
+                    ? \`/api/memories?limit=\${PAGE_SIZE}&offset=\${currentOffset}\`
+                    : \`/api/memories?limit=\${PAGE_SIZE}&offset=\${currentOffset}\`;
+
+                const res = await fetch(url);
+
+                if (!res.ok) {
+                    throw new Error(\`HTTP error! status: \${res.status}\`);
+                }
+
+                const data = await res.json();
+
+                // 응답 데이터 처리 (호환성 고려)
+                const items = data.items || (Array.isArray(data) ? data : []);
+                const total = data.total !== undefined ? data.total : items.length;
+                hasMore = data.hasMore !== undefined ? data.hasMore : (items.length === PAGE_SIZE);
+                totalCount = total;
+
+                // 메모리 배열에 추가
+                if (reset) {
+                    displayedMemories = items;
+                } else {
+                    displayedMemories = displayedMemories.concat(items);
+                }
+
+                // 검색 모드가 아닐 때만 allMemories 업데이트
+                if (!query) {
+                    allMemories = displayedMemories;
+                }
+
+                // 오프셋 업데이트
+                currentOffset += items.length;
+
+                // UI 업데이트
+                renderMemories(displayedMemories);
+                updateTotalCount();
+                updateLoadMoreButton();
+
+                // 그래프 렌더링 (검색 모드가 아닐 때만)
+                if (!query && reset) {
+                    renderGraph();
+                }
+
+            } catch (e) {
+                console.error('데이터 로드 실패:', e);
+                showError('데이터 로드 실패: ' + (e.message || '알 수 없는 오류'));
+                hasMore = false;
+            } finally {
+                isLoading = false;
+                updateLoadMoreButton();
+            }
+        }
+
+        // Load More 버튼 업데이트
+        function updateLoadMoreButton() {
+            const button = document.getElementById('load-more-btn');
+            if (!button) return;
+
+            if (isLoading) {
+                button.disabled = true;
+                button.innerHTML = '<span class="inline-block animate-spin mr-2">⏳</span> 로딩 중...';
+                button.classList.add('opacity-50', 'cursor-not-allowed');
+            } else if (!hasMore || displayedMemories.length >= totalCount) {
+                button.disabled = true;
+                button.innerHTML = '모든 항목을 불러왔습니다';
+                button.classList.add('opacity-50', 'cursor-not-allowed');
+                button.style.display = 'none'; // 모두 불러오면 버튼 숨김
+            } else {
+                button.disabled = false;
+                const remaining = totalCount - displayedMemories.length;
+                button.innerHTML = \`더보기 (\${remaining}개 남음)\`;
+                button.classList.remove('opacity-50', 'cursor-not-allowed');
+                button.style.display = 'block';
+            }
+        }
+
+        // 총 개수 표시 업데이트
+        function updateTotalCount() {
+            const totalCountEl = document.getElementById('total-count');
+            if (totalCountEl) {
+                if (totalCount > 0) {
+                    totalCountEl.innerText = \`총 \${totalCount}개 중 \${displayedMemories.length}개 표시\`;
+                } else {
+                    totalCountEl.innerText = '저장된 메모리가 없습니다';
+                }
+            }
+        }
+
+        // 에러 메시지 표시
+        function showError(message) {
+            const container = document.getElementById('memory-list');
+            const errorHtml = \`
+                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+                    <p>\${message}</p>
+                    <button onclick="this.parentElement.remove()" class="mt-2 text-red-600 hover:text-red-800 text-sm">닫기</button>
+                </div>
+            \`;
+            container.insertAdjacentHTML('afterbegin', errorHtml);
         }
 
         // 검색 필터링
         function filterMemories(query) {
             if (!query) {
-                renderMemories(allMemories);
+                // 검색어가 비어 있으면 초기화 후 다시 로드
+                loadMemories(true);
                 return;
             }
 
@@ -285,9 +434,9 @@ const htmlContent = `<!DOCTYPE html>
             const agentMatch = query.match(/^@(\w+)$/);
             let lowerQuery = query.toLowerCase();
 
-            const filtered = allMemories.filter(m => {
+            const filtered = displayedMemories.filter(m => {
                 if (agentMatch) {
-                    // 정확한 에이전트 이름 매칭
+                    // @agentName 형식이면 정확한 에이전트 이름 매칭
                     return m.agent === agentMatch[1];
                 }
 
@@ -297,18 +446,63 @@ const htmlContent = `<!DOCTYPE html>
                 return contentMatch || agentNameMatch || pathMatch;
             });
 
-            renderMemories(filtered);
+            // 검색 결과가 있으면 로드 모어 버튼 숨김
+            displayedMemories = filtered;
+            renderMemories(filtered, false);
+
+            const loadMoreBtn = document.getElementById('load-more-btn');
+            if (loadMoreBtn) {
+                loadMoreBtn.style.display = 'none';
+            }
+
+            // 총 개수 업데이트
+            const totalCountEl = document.getElementById('total-count');
+            if (totalCountEl) {
+                totalCountEl.innerText = '검색 결과: ' + filtered.length + '개';
+            }
         }
 
-        // 메모리 리스트 렌더링
-        function renderMemories(list) {
+        // 메모리 리스트 렌더링 (추가 모드 지원)
+        function renderMemories(list, append = false) {
             const container = document.getElementById('memory-list');
+            const loadMoreContainer = document.getElementById('load-more-container');
+
+            if (!append) {
+                // 기존 내용 초기화
+                container.innerHTML = '';
+            }
+
             if (list.length === 0) {
-                container.innerHTML = '<div class="text-center text-gray-400 py-10">검색 결과가 없습니다.</div>';
+                if (!append) {
+                    container.innerHTML = '<div class="text-center text-gray-400 py-10">검색 결과가 없습니다.</div>';
+                }
+                // Load More 버튼 숨기기
+                if (loadMoreContainer) {
+                    loadMoreContainer.classList.add('hidden');
+                }
                 return;
             }
 
-            container.innerHTML = list.map(m => \`
+            // Load More 버튼 표시
+            if (loadMoreContainer) {
+                loadMoreContainer.classList.remove('hidden');
+            }
+
+            // 리스트가 비어있거나 append 모드가 아니면 전체 렌더링
+            if (container.innerHTML === '' || !append) {
+                container.innerHTML = list.map(m => createMemoryCard(m)).join('');
+            } else {
+                // 추가 모드면 맨 끝에만 추가
+                const lastItem = list[list.length - 1];
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = createMemoryCard(lastItem);
+                container.appendChild(tempDiv.firstElementChild);
+            }
+        }
+
+        // 메모리 카드 HTML 생성
+        function createMemoryCard(m) {
+            return \`
                 <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                     <div class="flex justify-between items-start mb-3">
                         <div class="flex items-center gap-2">
@@ -320,10 +514,13 @@ const htmlContent = `<!DOCTYPE html>
                     <div class="prose prose-sm max-w-none text-gray-800">\${m.contentHtml || m.content}</div>
                     <div class="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-400 font-mono truncate">📍 \${m.path}</div>
                 </div>
-            \`).join('');
+            \`;
         }
 
-        loadMemories();
+        // 페이지 로드 시 초기 메모리 로드
+        document.addEventListener('DOMContentLoaded', () => {
+            loadMemories(true);
+        });
     </script>
 </body>
 </html>`;
