@@ -39,15 +39,15 @@ async function main() {
     const query = "오늘 며칠이야?";
     console.log(`\n🔄 검색 시도: "${query}"`);
     
-    const queryVector = await getEmbedding(query);
-    const searchResults = await searchMemory(queryVector, {}, 5);
-    console.log(`✅ 1차 벡터 검색 완료: ${searchResults.length}건 발견`);
+      const queryVector = await getEmbedding(query);
+      const searchResults = await searchMemory(queryVector, {}, 5);
+      console.log(`✅ 1차 벡터 검색 완료: ${searchResults.length}건 발견`);
 
-    if (searchResults.length > 0) {
-      // Rerank
-      console.log('🔄 Reranking 수행 중...');
-      // 타입 호환성 문제 회피를 위해 as any 사용
-      const reranked = await rerank(query, searchResults as any);
+      if (searchResults.length > 0) {
+        // Rerank
+        console.log('🔄 Reranking 수행 중...');
+        const reranked = await rerank(query, searchResults);
+
       
       console.log('\n🔎 [최종 결과 Top 1]');
       if (reranked.length > 0) {
