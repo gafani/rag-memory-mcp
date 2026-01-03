@@ -15,7 +15,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "description": "A RAG (Vector + Reranking) memory server for Agents",
   "repository": {
     "type": "git",

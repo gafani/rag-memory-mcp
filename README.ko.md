@@ -202,4 +202,4 @@ npx tsx src/scripts/test-manual.ts
 
 ## 라이선스
 
-ISC
+MIT
