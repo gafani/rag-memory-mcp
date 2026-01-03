@@ -10,7 +10,7 @@ Agent용 RAG 메모리 서버입니다. LanceDB(Vector DB)와 Google Gemini(Embe
 
 메인 설치 방법은 Git 저장소에서 직접 설치하는 방법을 권장합니다. npm 레지스트리를 거치지 않고 바로 설치합니다.
 
-```powershell
+```bash
 npm install -g git+https://forgejo.home/gafani/rag-for-agent-mcp.git
 ```
 
@@ -24,7 +24,7 @@ npm install -g git+https://forgejo.home/gafani/rag-for-agent-mcp.git
 ### 수동 실행
 
 - 서버를 띄우지 않고 대시보드만 보려면 아래 명령어를 사용합니다.
-```powershell
+```bash
 npm run view
 # 또는
 npx tsx src/dashboard.ts
@@ -174,9 +174,9 @@ System Prompt Template for MCP Agent
 - 빌드: `npm run build`
 - 테스트: `.env` 설정 후 `npx tsx src/scripts/test-manual.ts` 실행
 
-### 개발 실행 예시 (Windows PowerShell):
+### 개발 실행 예시 (Bash):
 
-```powershell
+```bash
 # 클론 및 설치
 git clone https://forgejo.home/gafani/rag-for-agent-mcp.git
 cd rag-for-agent-mcp
@@ -186,7 +186,7 @@ npm install
 npm run build
 
 # 테스트 설정 및 실행
-$env:GOOGLE_API_KEY="YOUR_GOOGLE_API_KEY"
+export GOOGLE_API_KEY="YOUR_GOOGLE_API_KEY"
 npx tsx src/scripts/test-manual.ts
 ```
 

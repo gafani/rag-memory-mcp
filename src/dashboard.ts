@@ -180,11 +180,9 @@ app.get('/', (c) => c.html(htmlContent));
 // 사용 가능한 포트 찾기
 function findAvailablePort(startPort: number): Promise<number> {
   return new Promise((resolve, reject) => {
-    const maxAttempts = 10;
-
-    const tryPort = (port: number, attempt: number) => {
-      if (attempt >= maxAttempts) {
-        reject(new Error(`No available port found after ${maxAttempts} attempts`));
+    const tryPort = (port: number) => {
+      if (port > 65535) {
+        reject(new Error('No available port found: reached system port limit (65535)'));
         return;
       }
 
@@ -194,7 +192,7 @@ function findAvailablePort(startPort: number): Promise<number> {
         if (err.code === 'EADDRINUSE') {
           // 포트가 이미 사용 중이면 다음 포트 시도
           server.close();
-          tryPort(port + 1, attempt + 1);
+          tryPort(port + 1);
         } else {
           server.close();
           reject(err);
@@ -210,9 +208,10 @@ function findAvailablePort(startPort: number): Promise<number> {
       server.listen(port);
     };
 
-    tryPort(startPort, 0);
+    tryPort(startPort);
   });
 }
+
 
 async function startDashboard() {
   try {
