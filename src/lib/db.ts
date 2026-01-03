@@ -6,19 +6,19 @@ import type { MemoryRecord } from './types.js';
 const DB_DIR = path.join(process.cwd(), '.rag-for-agent-mcp', 'lancedb');
 
 /**
- * LanceDB 테이블을 가져옵니다. 존재하지 않으면 생성합니다.
+ * Get the LanceDB table. Create it if missing.
  */
 export async function getTable() {
-  // 상위 디렉토리 생성
+  // Create parent directory
   const dbParentDir = path.dirname(DB_DIR);
   if (!fs.existsSync(dbParentDir)) {
     fs.mkdirSync(dbParentDir, { recursive: true });
   }
 
-  // DB 연결
+  // Connect to DB
   const db = await connect(DB_DIR);
 
-  // 테이블 존재 여부 확인 후 가져오기 또는 생성
+  // Open existing table or create a new one
   const tableName = 'memories';
   const tableNames = await db.tableNames();
 
@@ -26,7 +26,7 @@ export async function getTable() {
     return await db.openTable(tableName);
   }
 
-  // 테이블이 없으면 생성 - 더미 데이터로 초기화 후 삭제
+  // Create table if missing - initialize with a dummy row, then delete it
   const dummyRecord = {
     id: 'init',
     vector: Array(768).fill(0),
@@ -40,14 +40,14 @@ export async function getTable() {
 
   const table = await db.openTable(tableName);
 
-  // 더미 레코드 삭제
+  // Delete dummy record
   await table.delete('id = "init"');
 
   return table;
 }
 
 /**
- * 메모리를 저장합니다.
+ * Save a memory record.
  */
 export async function saveMemory(record: MemoryRecord): Promise<void> {
   const table = await getTable();
@@ -55,7 +55,7 @@ export async function saveMemory(record: MemoryRecord): Promise<void> {
 }
 
 /**
- * 벡터로 메모리를 검색합니다.
+ * Search memories by vector.
  */
 export async function searchMemory(
   vector: number[],

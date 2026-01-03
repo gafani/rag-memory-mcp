@@ -8,16 +8,16 @@ export interface MemoryRecord {
 }
 
 /**
- * LanceDB 검색 결과에 포함될 수 있는 거리(distance) 필드.
- * (LanceDB SDK가 반환하는 raw row에 `_distance`가 붙는 형태를 사용합니다.)
+ * A distance field that may be included in LanceDB search results.
+ * (We use the shape where the LanceDB SDK adds `_distance` to the raw row.)
  */
 export interface LanceDbSearchRow extends MemoryRecord {
   _distance?: number;
 }
 
 /**
- * `rerank` 입력으로 허용되는 레코드 형태.
- * - 기존 벡터 검색 점수(`score`) 또는 LanceDB 거리(`_distance`) 중 하나만 있어도 됩니다.
+ * Record shape accepted as `rerank` input.
+ * - Either the existing vector search score (`score`) or the LanceDB distance (`_distance`) is sufficient.
  */
 export interface RerankInputRecord extends MemoryRecord {
   score?: number;
@@ -25,9 +25,9 @@ export interface RerankInputRecord extends MemoryRecord {
 }
 
 /**
- * 시스템 전반에서 “점수(score)가 있는 문서”를 표현하는 공통 타입.
- * - 벡터 검색: 보통 distance/similarity 기반 값
- * - 재랭킹: LLM 기반 relevance score
+ * Common type representing a “document with a score” across the system.
+ * - Vector search: typically a distance/similarity-based value
+ * - Reranking: an LLM-based relevance score
  */
 export interface ScoredMemoryRecord extends MemoryRecord {
   score: number;

@@ -35,21 +35,21 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     tools: [
       {
         name: "memorize",
-        description: "지식 베이스에 정보를 저장합니다",
+        description: "Stores information in the knowledge base",
         inputSchema: {
           type: "object",
           properties: {
             content: {
               type: "string",
-              description: "기억할 내용",
+              description: "Content to store",
             },
             agent_name: {
               type: "string",
-              description: "기록하는 Agent 이름",
+              description: "Recording agent name",
             },
             path: {
               type: "string",
-              description: "작업 디렉토리 경로 (선택사항)",
+              description: "Working directory path (optional)",
             },
           },
           required: ["content", "agent_name"],
@@ -57,21 +57,21 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "recall",
-        description: "지식 베이스에서 관련 정보를 검색합니다",
+        description: "Searches for related information in the knowledge base",
         inputSchema: {
           type: "object",
           properties: {
             query: {
               type: "string",
-              description: "검색할 내용",
+              description: "Search query",
             },
             agent_name: {
               type: "string",
-              description: "Agent 이름으로 필터링 (선택사항)",
+              description: "Filter by agent name (optional)",
             },
             path: {
               type: "string",
-              description: "경로로 필터링 (선택사항)",
+              description: "Filter by path (optional)",
             },
           },
           required: ["query"],
@@ -79,7 +79,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "dashboard",
-        description: "대시보드를 백그라운드에서 실행합니다",
+        description: "Runs the dashboard in the background",
         inputSchema: {
           type: "object",
           properties: {},
@@ -125,7 +125,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       content: [
         {
           type: "text",
-          text: `성공적으로 기억했습니다 (ID: ${id})`,
+          text: `Memory stored successfully (ID: ${id})`,
         },
       ],
     };
@@ -156,7 +156,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     // Get embedding for query
     const queryVector = await getEmbedding(query);
 
-
     // First search
     const rawSearchResults = await searchMemory(
       queryVector,
@@ -166,7 +165,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       },
       ragVectorLimit
     );
-
 
     // Add score to search results
     const searchResults = rawSearchResults.map((result: any) => ({
@@ -190,7 +188,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         content: [
           {
             type: "text",
-            text: "관련된 기억을 찾을 수 없습니다.",
+            text: "No related memories found.",
           },
         ],
       };
@@ -206,7 +204,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       content: [
         {
           type: "text",
-          text: `검색 결과:\n\n${formattedResults}`,
+          text: `Search results:\n\n${formattedResults}`,
         },
       ],
     };
@@ -217,13 +215,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       content: [
         {
           type: "text",
-          text: "대시보드는 서버 시작 시 자동으로 백그라운드에서 실행됩니다. http://localhost:4567 (또는 할당된 포트)를 확인하세요.",
+          text: "The dashboard starts automatically in the background when the server starts. Check http://localhost:4567 (or the assigned port).",
         },
       ],
     };
   }
 
-  throw new Error(`알 수 없는 도구: ${name}`);
+  throw new Error(`Unknown tool: ${name}`);
 });
 
 // Startup

@@ -24,7 +24,7 @@ async function main() {
     if (data.models) {
         console.log("✅ Available models:");
         data.models.forEach((m: any) => {
-            // generateContent를 지원하는 모델만 강조 표시
+            // Highlight only models that support generateContent
             if (m.supportedGenerationMethods.includes("generateContent")) {
                  console.log(`- ${m.name} [GENERATION SUPPORTED]`);
             } else {

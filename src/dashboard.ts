@@ -12,42 +12,42 @@ dotenv.config();
 const dirName = path.basename(process.cwd());
 const app = new Hono();
 
-// API: 메모리 목록 조회 (페이지네이션 지원)
-// 쿼리 파라미터: limit (기본값 5), offset (기본값 0)
+// API: List memories (pagination supported)
+// Query params: limit (default 5), offset (default 0)
 app.get('/api/memories', async (c) => {
   try {
     const table = await getTable();
 
-    // 페이지네이션 파라미터 파싱
+    // Parse pagination parameters
     const limitParam = c.req.query('limit');
     const offsetParam = c.req.query('offset');
 
-    const limit = limitParam ? Math.max(1, parseInt(limitParam, 10)) : 5;
+    const limit = limitParam ? Math.max(1, parseInt(limitParam, 10)) : 20;
     const offset = offsetParam ? Math.max(0, parseInt(offsetParam, 10)) : 0;
 
-    // 전체 데이터를 가져와서 클라이언트 측 정렬 및 필터링 수행
-    // LanceDB 쿼리 정렬 제약으로 인해 전체를 가져온 후 정렬
+    // Fetch all data, then sort/filter on the client side
+    // Due to LanceDB query sorting constraints, fetch all then sort
     const allResults = await table.query().limit(10000).toArray();
 
-    // 날짜 포맷팅 및 정렬 (최신순)
+    // Format dates and sort (newest first)
     const cwd = process.cwd();
     const formatted = allResults
       .map((r: any) => {
         let relativePath = r.path;
 
-        // 절대 경로를 상대 경로로 변환
+        // Convert absolute path to relative path
         if (r.path && r.path.startsWith(cwd)) {
           relativePath = r.path.slice(cwd.length);
-          // 선행 슬래시/백슬래시 제거
+          // Remove leading slashes/backslashes
           relativePath = relativePath.replace(/^[\/\\]+/, '');
         }
 
-        // 빈 경로면 (root)로 표시
+        // Display '(root)' when path is empty
         if (!relativePath || relativePath.trim() === '') {
           relativePath = '(root)';
         }
 
-        // 마크다운을 HTML로 변환
+        // Convert Markdown to HTML
         const contentHtml = r.content ? marked.parse(r.content) : '';
 
         return {
