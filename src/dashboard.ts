@@ -164,7 +164,7 @@ const htmlContent = `<!DOCTYPE html>
         }
 
         // 색상 해시 함수 - 에이전트 이름으로 일관된 색상 생성
-        function stringToColor(str: string): string {
+        function stringToColor(str) {
             let hash = 0;
             for (let i = 0; i < str.length; i++) {
                 const char = str.charCodeAt(i);
@@ -198,8 +198,8 @@ const htmlContent = `<!DOCTYPE html>
             }
 
             // 에이전트별 메모리 개수 집계
-            const agentCounts = new Map<string, number>();
-            const agents = new Set<string>();
+            const agentCounts = new Map();
+            const agents = new Set();
 
             allMemories.forEach(m => {
                 if (m.agent) {
@@ -217,7 +217,7 @@ const htmlContent = `<!DOCTYPE html>
             }));
 
             // 링크 생성 - 메모리 내에서 다른 에이전트 언급(@targetAgent) 감지
-            const links: { source: string; target: string }[] = [];
+            const links = [];
             const agentRegex = /@(\w+)/g;
 
             allMemories.forEach(m => {
@@ -226,7 +226,7 @@ const htmlContent = `<!DOCTYPE html>
 
                 const content = m.content || '';
                 let match;
-                const mentionedAgents = new Set<string>();
+                const mentionedAgents = new Set();
 
                 while ((match = agentRegex.exec(content)) !== null) {
                     const targetAgent = match[1];
@@ -254,7 +254,7 @@ const htmlContent = `<!DOCTYPE html>
                 .linkWidth(1)
                 .linkColor(() => 'rgba(255, 255, 255, 0.3)')
                 .backgroundColor('#0f172a')
-                .onNodeClick((node: any) => {
+                .onNodeClick((node) => {
                     // 노드 클릭 시 해당 에이전트의 메모리만 필터링
                     filterMemories('@' + node.id);
                 });
