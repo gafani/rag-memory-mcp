@@ -181,7 +181,7 @@ const htmlContent = `<!DOCTYPE html>
                 hash = hash & hash; // Convert to 32bit integer
             }
             const hue = Math.abs(hash % 360);
-            return `hsl(${hue}, 70%, 60%)`;
+            return 'hsl(' + hue + ', 70%, 60%)';
         }
 
         // 그래프 렌더링
@@ -196,16 +196,14 @@ const htmlContent = `<!DOCTYPE html>
                     graphInstance = null;
                 }
                 // 빈 상태 메시지 표시
-                elem.innerHTML = `
-                    <div class="flex items-center justify-center h-full">
-                        <div class="text-center">
-                            <div class="text-6xl mb-4">🌌</div>
-                            <p class="text-gray-300 text-lg font-medium">No memory data available to visualize yet.</p>
-                            <p class="text-gray-500 text-sm mt-2">Add memories to see the Agent Galaxy graph.</p>
-                        </div>
-                    </div>
-                `;
-                return;
+                elem.innerHTML = 
+                    '<div class="flex items-center justify-center h-full">' +
+                    '    <div class="text-center">' +
+                    '        <div class="text-6xl mb-4">🌌</div>' +
+                    '        <p class="text-gray-300 text-lg font-medium">No memory data available to visualize yet.</p>' +
+                    '        <p class="text-gray-500 text-sm mt-2">Add memories to see the Agent Galaxy graph.</p>' +
+                    '    </div>' +
+                    '</div>';
             }
 
             // 에이전트별 메모리 개수 집계
@@ -267,7 +265,7 @@ const htmlContent = `<!DOCTYPE html>
                 .backgroundColor('#0f172a')
                 .onNodeClick((node: any) => {
                     // 노드 클릭 시 해당 에이전트의 메모리만 필터링
-                    filterMemories(`@${node.id}`);
+                    filterMemories('@' + node.id);
                 });
         }
 
