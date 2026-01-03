@@ -67,6 +67,7 @@ const htmlContent = `<!DOCTYPE html>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="//unpkg.com/3d-force-graph"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -80,9 +81,33 @@ const htmlContent = `<!DOCTYPE html>
         }
     </script>
 </head>
-<body class="bg-gray-100 h-screen flex flex-col overflow-hidden">
+    <body class="bg-gray-100 h-screen flex flex-col overflow-hidden">
     <!-- Header -->
     <header class="bg-white shadow-sm p-4 z-10">
+        <div class="max-w-7xl mx-auto flex justify-between items-center gap-4">
+            <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2 whitespace-nowrap">
+                🧠 RAG Memory Viewer (${dirName})
+            </h1>
+
+            <!-- Agent Galaxy Button -->
+            <button id="toggle-graph"
+                    class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium transition-colors flex items-center gap-2"
+                    onclick="toggleGraph()">
+                🌌 Agent Galaxy
+            </button>
+
+            <!-- 검색 기능 -->
+            <div class="flex-1 max-w-xl">
+                 <input type="text"
+                        id="search-input"
+                        placeholder="Search content, agent, or path..."
+                        class="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                        oninput="filterMemories(this.value)">
+            </div>
+
+            <div class="text-sm text-gray-500 whitespace-nowrap" id="total-count">Loading...</div>
+        </div>
+    </header>
         <div class="max-w-7xl mx-auto flex justify-between items-center gap-4">
             <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2 whitespace-nowrap">
                 🧠 RAG Memory Viewer (${dirName})
@@ -101,6 +126,11 @@ const htmlContent = `<!DOCTYPE html>
         </div>
     </header>
 
+    <!-- Graph Container -->
+    <div id="graph-container" class="hidden bg-slate-900 border-b-2 border-slate-700">
+        <div id="3d-graph" class="w-full h-[400px]"></div>
+    </div>
+
     <!-- Main Content -->
     <div class="flex-1 overflow-hidden bg-gray-50">
         <main class="h-full w-full p-6 overflow-y-auto">
@@ -114,6 +144,116 @@ const htmlContent = `<!DOCTYPE html>
 
     <script>
         let allMemories = [];
+        let graphInstance = null;
+        let graphVisible = false;
+
+        // 그래프 토글
+        function toggleGraph() {
+            const container = document.getElementById('graph-container');
+            const button = document.getElementById('toggle-graph');
+            graphVisible = !graphVisible;
+
+            if (graphVisible) {
+                container.classList.remove('hidden');
+                button.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+                button.classList.add('bg-slate-700', 'hover:bg-slate-800');
+                if (!graphInstance) {
+                    renderGraph();
+                } else {
+                    graphInstance.resumeAnimation();
+                }
+            } else {
+                container.classList.add('hidden');
+                button.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+                button.classList.remove('bg-slate-700', 'hover:bg-slate-800');
+                if (graphInstance) {
+                    graphInstance.pauseAnimation();
+                }
+            }
+        }
+
+        // 색상 해시 함수 - 에이전트 이름으로 일관된 색상 생성
+        function stringToColor(str: string): string {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32bit integer
+            }
+            const hue = Math.abs(hash % 360);
+            return `hsl(${hue}, 70%, 60%)`;
+        }
+
+        // 그래프 렌더링
+        function renderGraph() {
+            if (allMemories.length === 0) {
+                console.warn('No memories to display in graph');
+                return;
+            }
+
+            // 에이전트별 메모리 개수 집계
+            const agentCounts = new Map<string, number>();
+            const agents = new Set<string>();
+
+            allMemories.forEach(m => {
+                if (m.agent) {
+                    const count = agentCounts.get(m.agent) || 0;
+                    agentCounts.set(m.agent, count + 1);
+                    agents.add(m.agent);
+                }
+            });
+
+            // 노드 생성
+            const nodes = Array.from(agents).map(agent => ({
+                id: agent,
+                val: agentCounts.get(agent) || 1,
+                color: stringToColor(agent)
+            }));
+
+            // 링크 생성 - 메모리 내에서 다른 에이전트 언급(@targetAgent) 감지
+            const links: { source: string; target: string }[] = [];
+            const agentRegex = /@(\w+)/g;
+
+            allMemories.forEach(m => {
+                const sourceAgent = m.agent;
+                if (!sourceAgent) return;
+
+                const content = m.content || '';
+                let match;
+                const mentionedAgents = new Set<string>();
+
+                while ((match = agentRegex.exec(content)) !== null) {
+                    const targetAgent = match[1];
+                    mentionedAgents.add(targetAgent);
+                }
+
+                mentionedAgents.forEach(targetAgent => {
+                    if (targetAgent !== sourceAgent && agents.has(targetAgent)) {
+                        links.push({
+                            source: sourceAgent,
+                            target: targetAgent
+                        });
+                    }
+                });
+            });
+
+            // 그래프 초기화
+            const elem = document.getElementById('3d-graph');
+            if (!elem) return;
+
+            graphInstance = ForceGraph3D()(elem)
+                .graphData({ nodes, links })
+                .nodeLabel('id')
+                .nodeAutoColorBy('group')
+                .nodeVal('val')
+                .linkWidth(1)
+                .linkColor(() => 'rgba(255, 255, 255, 0.3)')
+                .backgroundColor('#0f172a')
+                .onNodeClick((node: any) => {
+                    // 노드 클릭 시 해당 에이전트의 메모리만 필터링
+                    filterMemories(`@${node.id}`);
+                });
+        }
 
         // 데이터 로드
         async function loadMemories() {
@@ -136,12 +276,20 @@ const htmlContent = `<!DOCTYPE html>
                 return;
             }
 
-            const lowerQuery = query.toLowerCase();
+            // @agentName 형식인지 확인
+            const agentMatch = query.match(/^@(\w+)$/);
+            let lowerQuery = query.toLowerCase();
+
             const filtered = allMemories.filter(m => {
+                if (agentMatch) {
+                    // 정확한 에이전트 이름 매칭
+                    return m.agent === agentMatch[1];
+                }
+
                 const contentMatch = (m.content || '').toLowerCase().includes(lowerQuery);
-                const agentMatch = (m.agent || '').toLowerCase().includes(lowerQuery);
+                const agentNameMatch = (m.agent || '').toLowerCase().includes(lowerQuery);
                 const pathMatch = (m.path || '').toLowerCase().includes(lowerQuery);
-                return contentMatch || agentMatch || pathMatch;
+                return contentMatch || agentNameMatch || pathMatch;
             });
 
             renderMemories(filtered);
