@@ -356,7 +356,12 @@ const htmlContent = `<!DOCTYPE html>
                 currentOffset += items.length;
 
                 // UI 업데이트
-                renderMemories(displayedMemories);
+                // reset이 false면 새로 받아온 items만 append 모드로 렌더링
+                if (reset) {
+                    renderMemories(displayedMemories, false);
+                } else {
+                    renderMemories(items, true);
+                }
                 updateTotalCount();
                 updateLoadMoreButton();
 
@@ -492,11 +497,12 @@ const htmlContent = `<!DOCTYPE html>
             if (container.innerHTML === '' || !append) {
                 container.innerHTML = list.map(m => createMemoryCard(m)).join('');
             } else {
-                // 추가 모드면 맨 끝에만 추가
-                const lastItem = list[list.length - 1];
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = createMemoryCard(lastItem);
-                container.appendChild(tempDiv.firstElementChild);
+                // append 모드: 전달받은 list의 모든 아이템을 순회하며 추가
+                list.forEach(m => {
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = createMemoryCard(m);
+                    container.appendChild(tempDiv.firstElementChild);
+                });
             }
         }
 
