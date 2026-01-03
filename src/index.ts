@@ -77,6 +77,15 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ["query"],
         },
       },
+      {
+        name: "dashboard",
+        description: "대시보드를 백그라운드에서 실행합니다",
+        inputSchema: {
+          type: "object",
+          properties: {},
+          additionalProperties: false,
+        },
+      },
     ],
   };
 });
