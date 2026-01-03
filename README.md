@@ -30,6 +30,12 @@ npm run view
 npx tsx src/dashboard.ts
 ```
 
+# Git 저장소에서 직접 실행 (설치 없이 1회성 실행)
+npx -y --package git+<repository-url> -c "npm run view"
+
+# 예시:
+npx -y --package git+https://forgejo.home/gafani/rag-for-agent-mcp.git -c "npm run view"
+
 ## MCP 설정 (Configuration)
 
 Claude Desktop 등에서 사용할 때의 설정 예시를 정확히 보여드립니다:
