@@ -4,9 +4,14 @@ import { getTable } from './lib/db.js';
 import open from 'open';
 import dotenv from 'dotenv';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { createServer } from 'net';
 import { marked } from 'marked';
 import fs from 'fs';
+
+// ESM에서 __dirname 대체: 현재 파일 위치 기준 경로
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
@@ -89,8 +94,9 @@ app.get('/api/memories', async (c) => {
 });
 
 // UI: 대시보드 HTML (외부 파일에서 로드)
+// 현재 파일 위치(__dirname) 기준으로 views/dashboard.html을 찾음 (CWD 무관)
 function loadHtmlTemplate(): string {
-  const htmlPath = path.join(process.cwd(), 'src', 'views', 'dashboard.html');
+  const htmlPath = path.join(__dirname, 'views', 'dashboard.html');
   const template = fs.readFileSync(htmlPath, 'utf-8');
   return template.replace('{{DIR_NAME}}', dirName);
 }
